@@ -161,7 +161,7 @@ function App() {
                      // No need for a separate system message anymore, the backend has already synced the facts!
                      setMessages(prev => [...prev, { role: 'ai', text: "✅ Bill scanned! I've updated your case with the Merchant, Date, and Amount. What happened exactly?" }]);
                  } catch (err) {
-                     const errorMsg = typeof err === 'object' ? JSON.stringify(err) : String(err);
+                     const errorMsg = err.message || err.detail || String(err);
                      setMessages(prev => [...prev, { role: 'ai', text: `Vision Error: ${errorMsg}` }]);
                  } finally {
                      setIsLoading(false);

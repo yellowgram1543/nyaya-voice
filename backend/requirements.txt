@@ -13,3 +13,4 @@ pdfkit>=1.0.0
 qrcode[pil]
 reportlab
 Pillow
+requests

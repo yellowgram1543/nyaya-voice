@@ -57,12 +57,23 @@ def update_session_facts(session_id: str, new_facts: dict):
         current_facts = {}
         if response.data and len(response.data) > 0:
             current_facts = json.loads(response.data[0]["facts"])
-        
-        # 2. Merge
-        current_facts.update(new_facts)
-        
-        # 3. Save back
-        supabase.table("sessions").update({"facts": json.dumps(current_facts)}).eq("session_id", session_id).execute()
+            
+            # 2. Merge
+            current_facts.update(new_facts)
+            
+            # 3. Save back to existing row
+            supabase.table("sessions").update({"facts": json.dumps(current_facts)}).eq("session_id", session_id).execute()
+        else:
+            # Session doesn't exist yet — create it with OCR facts pre-loaded
+            data = {
+                "session_id": session_id,
+                "chat_history": json.dumps([]),
+                "facts": json.dumps(new_facts),
+                "is_complete": False,
+                "latest_response": ""
+            }
+            supabase.table("sessions").upsert(data).execute()
+            
         print(f"Surgically updated facts for session {session_id}")
     except Exception as e:
         print(f"Supabase surgical update error: {e}")

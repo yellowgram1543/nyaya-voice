@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
+import json
 from dotenv import load_dotenv
 
 # Load environment variables (API keys)
@@ -78,7 +79,6 @@ async def get_risk_assessment(session_id: str):
         contents=prompt,
         config=genai.types.GenerateContentConfig(response_mime_type="application/json")
     )
-    import json
     return json.loads(response.text)
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -143,7 +143,6 @@ async def upload_receipt(session_id: str, file: UploadFile = File(...)):
             ],
             config=genai.types.GenerateContentConfig(response_mime_type="application/json")
         )
-        import json
         extracted_data = json.loads(response.text)
         
         # SURGICAL SYNC: Only update the facts dictionary without wiping chat history or state
