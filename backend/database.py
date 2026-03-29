@@ -1,57 +1,62 @@
-import sqlite3
-import json
 import os
+import json
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "nyaya_sessions.db")
+# Ensure env is loaded
+load_dotenv()
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS sessions (
-                        session_id TEXT PRIMARY KEY,
-                        chat_history TEXT,
-                        facts TEXT,
-                        is_complete BOOLEAN,
-                        latest_response TEXT
-                      )''')
-    conn.commit()
-    conn.close()
+URL = os.getenv("SUPABASE_URL")
+KEY = os.getenv("SUPABASE_KEY")
+
+# Initialize the Supabase Client
+supabase: Client = create_client(URL, KEY)
 
 def get_session(session_id: str) -> dict:
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT chat_history, facts, is_complete, latest_response FROM sessions WHERE session_id = ?", (session_id,))
-    row = cursor.fetchone()
-    conn.close()
-    
-    if row:
-        return {
-            "session_id": session_id,
-            "chat_history": json.loads(row[0]),
-            "facts": json.loads(row[1]),
-            "is_complete": bool(row[2]),
-            "latest_response": row[3]
-        }
-    return None
+    """Retrieves the session state from Supabase."""
+    try:
+        response = supabase.table("sessions").select("*").eq("session_id", session_id).execute()
+        
+        if response.data and len(response.data) > 0:
+            row = response.data[0]
+            return {
+                "session_id": session_id,
+                "chat_history": json.loads(row["chat_history"]),
+                "facts": json.loads(row["facts"]),
+                "is_complete": bool(row["is_complete"]),
+                "latest_response": row["latest_response"]
+            }
+        return None
+    except Exception as e:
+        print(f"Supabase GET error: {e}")
+        return None
 
 def save_session(state: dict):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''INSERT OR REPLACE INTO sessions 
-                      (session_id, chat_history, facts, is_complete, latest_response) 
-                      VALUES (?, ?, ?, ?, ?)''', 
-                   (state["session_id"], json.dumps(state["chat_history"]), 
-                    json.dumps(state["facts"]), state["is_complete"], state["latest_response"]))
-    conn.commit()
-    conn.close()
+    """Saves or updates the session state in Supabase."""
+    try:
+        data = {
+            "session_id": state["session_id"],
+            "chat_history": json.dumps(state["chat_history"]),
+            "facts": json.dumps(state["facts"]),
+            "is_complete": state["is_complete"],
+            "latest_response": state["latest_response"]
+        }
+        
+        # 'upsert' in Supabase automatically handles 'INSERT OR REPLACE' logic
+        supabase.table("sessions").upsert(data).execute()
+        
+    except Exception as e:
+        print(f"Supabase SAVE error: {e}")
+
+# Note: You must manually create the 'sessions' table in your Supabase Dashboard:
+# Table name: sessions
+# Columns: session_id (text, PK), chat_history (text), facts (text), is_complete (bool), latest_response (text)
 
 def get_all_completed_sessions():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT session_id, facts FROM sessions WHERE is_complete = 1")
-    rows = cursor.fetchall()
-    conn.close()
-    return [{"session_id": r[0], "facts": json.loads(r[1])} for r in rows]
-
-# Initialize upon import
-init_db()
+    """Returns all completed legal notices for the B2B dashboard from Supabase."""
+    try:
+        response = supabase.table("sessions").select("session_id, facts").eq("is_complete", True).execute()
+        return [{"session_id": r["session_id"], "facts": json.loads(r["facts"])} for r in response.data]
+    except Exception as e:
+        print(f"Supabase B2B fetch error: {e}")
+        return []
