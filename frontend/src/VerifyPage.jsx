@@ -36,14 +36,14 @@ export default function VerifyPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-20 bg-[#fdfcfaf5] text-charcoal p-4">
-      <div className="w-full max-w-2xl bg-white p-10 rounded-[2rem] shadow-sm border border-green-200 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center py-10 sm:py-20 bg-[#fdfcfaf5] text-charcoal p-4">
+      <div className="w-full max-w-2xl bg-white p-6 sm:p-10 rounded-[2rem] shadow-sm border border-green-200 relative overflow-hidden">
         <div className="absolute top-0 w-full h-2 left-0 bg-green-500"></div>
-        <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-2xl">✅</div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-2xl shrink-0"></div>
             <div>
-              <h1 className="text-3xl font-serif font-bold text-green-800">Verified Legal Notice</h1>
-              <p className="text-sm font-mono text-gray-400">UUID: {data.session_id}</p>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-green-800">Legal Notice</h1>
+              <p className="text-sm font-mono text-gray-400 break-all">UUID: {data.session_id}</p>
             </div>
         </div>
 
@@ -52,13 +52,13 @@ export default function VerifyPage() {
         </p>
 
         <div className="space-y-4">
-          <div className="flex justify-between p-4 bg-cream rounded-xl border border-stone-200">
+          <div className="flex flex-col sm:flex-row sm:justify-between p-4 bg-cream rounded-xl border border-stone-200 gap-2">
             <span className="font-semibold">Opponent</span>
-            <span className="text-right max-w-[60%]">{data.facts.opponent_name}</span>
+            <span className="sm:text-right max-w-[100%] sm:max-w-[60%] text-gray-700">{data.facts.opponent_name}</span>
           </div>
           <div className="flex justify-between p-4 bg-cream rounded-xl border border-stone-200">
             <span className="font-semibold">Dispute Amount</span>
-            <span>Rs. {data.facts.dispute_amount}</span>
+            <span className="font-mono">Rs. {data.facts.dispute_amount}</span>
           </div>
           <div className="flex justify-between p-4 bg-cream rounded-xl border border-stone-200">
             <span className="font-semibold">Incident Date</span>

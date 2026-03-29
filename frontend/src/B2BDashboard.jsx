@@ -31,18 +31,18 @@ export default function B2BDashboard() {
   return (
     <div className="min-h-screen bg-stone-50 p-8 text-charcoal flex flex-col items-center">
       <div className="w-full max-w-7xl">
-          <header className="mb-12 border-b border-stone-300 pb-6 flex justify-between items-end">
+          <header className="mb-8 md:mb-12 border-b border-stone-300 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-              <h1 className="text-4xl font-serif font-bold text-gray-900 tracking-tight mb-2">Corporate Defense Portal</h1>
-              <p className="text-gray-500 text-lg">Manage incoming pre-litigation notices and AI risk probabilities.</p>
+              <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 tracking-tight mb-2">Corporate Defense Portal</h1>
+              <p className="text-gray-500 text-base md:text-lg">Manage incoming pre-litigation notices and AI risk probabilities.</p>
             </div>
-            <div className="bg-charcoal text-white px-4 py-2 rounded-lg font-mono text-sm">
+            <div className="bg-charcoal text-white px-4 py-2 rounded-lg font-mono text-sm whitespace-nowrap">
               Active Alerts: {notices.length}
             </div>
           </header>
 
-          <div className="w-full bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+          <div className="w-full bg-white rounded-2xl shadow-sm border border-stone-200 overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-stone-100 border-b border-stone-300">
                   <th className="p-5 font-semibold text-gray-600">Notice UUID</th>
@@ -93,22 +93,22 @@ export default function B2BDashboard() {
               </div>
             ) : riskData && (
               <div className="space-y-6">
-                <div className="flex gap-6">
+                <div className="flex flex-col sm:flex-row gap-6">
                   {/* Gauge Simulator */}
-                  <div className="w-1/3 bg-stone-50 rounded-2xl p-6 flex flex-col items-center justify-center border border-stone-200">
-                    <div className={`text-6xl font-black ${riskData.risk_score > 70 ? 'text-red-500' : 'text-orange-500'}`}>
+                  <div className="w-full sm:w-1/3 bg-stone-50 rounded-2xl p-6 flex flex-col items-center justify-center border border-stone-200">
+                    <div className={`text-5xl sm:text-6xl font-black ${riskData.risk_score > 70 ? 'text-red-500' : 'text-orange-500'}`}>
                       {riskData.risk_score}%
                     </div>
-                    <div className="text-xs uppercase font-bold text-gray-400 mt-2 tracking-wider">Litigation Risk</div>
+                    <div className="text-xs uppercase font-bold text-gray-400 mt-2 tracking-wider text-center">Litigation Risk</div>
                   </div>
                   
-                  <div className="w-2/3 space-y-4">
+                  <div className="w-full sm:w-2/3 space-y-4">
                     <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-                      <h4 className="font-bold text-red-800 mb-1 flex items-center gap-2"><span>🛡️</span> Legal Vulnerability</h4>
+                      <h4 className="font-bold text-red-800 mb-1 flex items-center gap-2">Legal Vulnerability</h4>
                       <p className="text-red-900 text-sm leading-relaxed">{riskData.legal_vulnerability}</p>
                     </div>
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                      <h4 className="font-bold text-blue-800 mb-1 flex items-center gap-2"><span>⚖️</span> Est. Court Cost</h4>
+                      <h4 className="font-bold text-blue-800 mb-1 flex items-center gap-2">Est. Court Cost</h4>
                       <p className="text-blue-900 text-md font-bold leading-relaxed">{riskData.estimated_cost}</p>
                     </div>
                   </div>
