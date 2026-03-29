@@ -151,23 +151,15 @@ function App() {
                  formData.append("file", file);
                  
                  try {
-                     const res = await fetch("https://nyaya-voice-backend.onrender.com/api/upload_receipt", {
+                     const res = await fetch(`https://nyaya-voice-backend.onrender.com/api/upload_receipt?session_id=123`, {
                          method: "POST",
                          body: formData
                      });
                      const data = await res.json();
                      if (!res.ok) throw new Error(data.detail || "Upload failed");
                      
-                     const extractedMsg = `[System: User uploaded a receipt. Extracted Data:]\n${data.extracted_text}`;
-                     
-                     const chatRes = await fetch("https://nyaya-voice-backend.onrender.com/api/chat", {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: extractedMsg, session_id: '123' })
-                     });
-                     const chatData = await chatRes.json();
-                     setMessages(prev => [...prev, { role: 'ai', text: chatData.reply }]);
-                     if (chatData.status === 'complete') setIsComplete(true);
+                     // No need for a separate system message anymore, the backend has already synced the facts!
+                     setMessages(prev => [...prev, { role: 'ai', text: "✅ Bill scanned! I've updated your case with the Merchant, Date, and Amount. What happened exactly?" }]);
                  } catch (err) {
                      setMessages(prev => [...prev, { role: 'ai', text: `Vision Error: ${err.message}` }]);
                  } finally {

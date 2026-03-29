@@ -118,21 +118,21 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/upload_receipt")
-async def upload_receipt(file: UploadFile = File(...)):
-    """Day 2: Vision OCR Endpoint"""
+async def upload_receipt(session_id: str, file: UploadFile = File(...)):
+    """Day 2: Vision OCR Endpoint that syncs with the Session Brain"""
     try:
         from google import genai
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
         
         file_bytes = await file.read()
         prompt = """You are a Forensic AI Legal Clerk. Analyze this Indian retail receipt or invoice.
-        It may be crumpled, faded, or handwritten. Use contextual clues (GSTIN, Logos, Stamps) to deduce the text.
-        Extract and return exactly these 4 facts in strict plain text (no markdown, no asterisks):
-        Merchant: [Exact name of the company/store]
-        Date: [Exact transaction date]
-        Amount: [Exact Total Output Amount]
-        Product/Service: [A short 3-word summary of what was actually purchased]
-        If a field is hopelessly illegible, deduce it. If totally missing, write 'Unknown'.
+        Extract and return exactly these 4 facts in JSON format:
+        {
+          "opponent_name": "Exact name of the company",
+          "incident_date": "Exact transaction date",
+          "dispute_amount": "Total Amount",
+          "product_name": "Short summary of item"
+        }
         """
         
         response = client.models.generate_content(
@@ -140,9 +140,22 @@ async def upload_receipt(file: UploadFile = File(...)):
             contents=[
                 prompt, 
                 genai.types.Part.from_bytes(data=file_bytes, mime_type=file.content_type)
-            ]
+            ],
+            config=genai.types.GenerateContentConfig(response_mime_type="application/json")
         )
-        return {"extracted_text": response.text.strip()}
+        import json
+        extracted_data = json.loads(response.text)
+        
+        # SYNC WITH SESSION: Load current state and inject these new facts
+        current_state = get_session(session_id)
+        if not current_state:
+            current_state = {"session_id": session_id, "chat_history": [], "facts": {}, "is_complete": False, "latest_response": ""}
+        
+        # Inject extracted facts into the persistent state
+        current_state["facts"].update(extracted_data)
+        save_session(current_state)
+        
+        return {"extracted_text": response.text.strip(), "message": "Bill details successfully synced with your case."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
