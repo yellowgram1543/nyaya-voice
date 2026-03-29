@@ -48,6 +48,25 @@ def save_session(state: dict):
     except Exception as e:
         print(f"Supabase SAVE error: {e}")
 
+def update_session_facts(session_id: str, new_facts: dict):
+    """Surgically updates only the facts dictionary for a session without touching other state."""
+    try:
+        # 1. Get current facts
+        response = supabase.table("sessions").select("facts").eq("session_id", session_id).execute()
+        
+        current_facts = {}
+        if response.data and len(response.data) > 0:
+            current_facts = json.loads(response.data[0]["facts"])
+        
+        # 2. Merge
+        current_facts.update(new_facts)
+        
+        # 3. Save back
+        supabase.table("sessions").update({"facts": json.dumps(current_facts)}).eq("session_id", session_id).execute()
+        print(f"Surgically updated facts for session {session_id}")
+    except Exception as e:
+        print(f"Supabase surgical update error: {e}")
+
 # Note: You must manually create the 'sessions' table in your Supabase Dashboard:
 # Table name: sessions
 # Columns: session_id (text, PK), chat_history (text), facts (text), is_complete (bool), latest_response (text)

@@ -33,7 +33,7 @@ class ChatResponse(BaseModel):
     status: str
 
 # SQLite database for persistent state tracking across server restarts
-from database import get_session, save_session, get_all_completed_sessions
+from database import get_session, save_session, update_session_facts, get_all_completed_sessions
 
 @app.get("/")
 async def root():
@@ -146,14 +146,8 @@ async def upload_receipt(session_id: str, file: UploadFile = File(...)):
         import json
         extracted_data = json.loads(response.text)
         
-        # SYNC WITH SESSION: Load current state and inject these new facts
-        current_state = get_session(session_id)
-        if not current_state:
-            current_state = {"session_id": session_id, "chat_history": [], "facts": {}, "is_complete": False, "latest_response": ""}
-        
-        # Inject extracted facts into the persistent state
-        current_state["facts"].update(extracted_data)
-        save_session(current_state)
+        # SURGICAL SYNC: Only update the facts dictionary without wiping chat history or state
+        update_session_facts(session_id, extracted_data)
         
         return {"extracted_text": response.text.strip(), "message": "Bill details successfully synced with your case."}
     except Exception as e:
