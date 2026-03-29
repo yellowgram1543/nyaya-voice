@@ -8,7 +8,7 @@ export default function VerifyPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/verify/${sessionId}`)
+    fetch(`https://nyaya-voice-backend.onrender.com/api/verify/${sessionId}`)
       .then(res => {
         if (!res.ok) throw new Error("Verification Failed");
         return res.json();

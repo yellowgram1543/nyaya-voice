@@ -7,7 +7,7 @@ export default function B2BDashboard() {
   const [riskLoading, setRiskLoading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/b2b/notices')
+    fetch('https://nyaya-voice-backend.onrender.com/api/b2b/notices')
       .then(r => r.json())
       .then(d => setNotices(d));
   }, []);
@@ -15,7 +15,7 @@ export default function B2BDashboard() {
   const handleViewRisk = (sessionId) => {
     setSelectedNotice(sessionId);
     setRiskLoading(true);
-    fetch(`http://localhost:8000/api/b2b/risk/${sessionId}`)
+    fetch(`https://nyaya-voice-backend.onrender.com/api/b2b/risk/${sessionId}`)
       .then(r => r.json())
       .then(d => {
         setRiskData(d);

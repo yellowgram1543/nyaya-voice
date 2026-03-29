@@ -16,7 +16,7 @@ function App() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const response = await fetch('https://nyaya-voice-backend.onrender.com/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg.text, session_id: '123' })
@@ -151,7 +151,7 @@ function App() {
                  formData.append("file", file);
                  
                  try {
-                     const res = await fetch("http://localhost:8000/api/upload_receipt", {
+                     const res = await fetch("https://nyaya-voice-backend.onrender.com/api/upload_receipt", {
                          method: "POST",
                          body: formData
                      });
@@ -160,7 +160,7 @@ function App() {
                      
                      const extractedMsg = `[System: User uploaded a receipt. Extracted Data:]\n${data.extracted_text}`;
                      
-                     const chatRes = await fetch("http://localhost:8000/api/chat", {
+                     const chatRes = await fetch("https://nyaya-voice-backend.onrender.com/api/chat", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ message: extractedMsg, session_id: '123' })
@@ -198,7 +198,7 @@ function App() {
           {isComplete && (
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
               <a 
-                href="http://localhost:8000/api/download_notice/123" 
+                href="https://nyaya-voice-backend.onrender.com/api/download_notice/123" 
                 target="_blank" 
                 rel="noreferrer" 
                 className="bg-charcoal text-cream hover:bg-gold hover:text-charcoal px-8 py-5 rounded-full font-serif text-xl border-4 border-cream shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all whitespace-nowrap flex items-center gap-3"
