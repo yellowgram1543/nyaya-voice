@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache
+
+# Secrets
+.env
+
+# Node / Web
+node_modules/
+build/
+dist/
+.DS_Store
+
+# Local Databases and Vector Search
+backend/nyaya_sessions.db
+backend/chroma/
+backend/*.sqlite3
+backend/*.db
+
+# Generated Artifacts
+*.pdf
+*.log
