@@ -75,7 +75,7 @@ async def get_risk_assessment(session_id: str):
     """
     
     response = client.models.generate_content(
-        model='gemini-1.5-flash',
+        model='gemini-flash-latest',
         contents=prompt,
         config=genai.types.GenerateContentConfig(response_mime_type="application/json")
     )
@@ -136,7 +136,7 @@ async def upload_receipt(session_id: str, file: UploadFile = File(...)):
         """
         
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-flash-latest',
             contents=[
                 prompt, 
                 genai.types.Part.from_bytes(data=file_bytes, mime_type=file.content_type)
