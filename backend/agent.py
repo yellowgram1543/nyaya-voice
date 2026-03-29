@@ -46,10 +46,12 @@ def intake_node(state: CaseState) -> CaseState:
     Conversation History:
     {history_text}
     
-    1. Read the history and update your internal state if the user provided new facts.
-    2. If facts are STILL MISSING, your `ai_response_to_user` MUST politely ask the user for them (interrogate naturally, don't ask for all 5 at once).
+    1. CRITICAL: Seamlessly comprehend multiple Indian languages including 'Hinglish' (mixed Hindi and English), Telugu, Kannada, and regional dialect slang.
+       Automatically translate these informal or regional inputs into formal, legally accurate English facts when updating your internal state.
+    2. Read the history and update your internal state if the user provided new facts.
+    3. If facts are STILL MISSING, your `ai_response_to_user` MUST politely ask the user for them. Interrogate naturally. **CRITICAL RULE:** Actively mirror the user's language. If they spoke in Hinglish, Telugu, or Kannada, reply in that exact same language to make them comfortable.
        Specifically ensure we get the 'user_city', 'user_pincode' (6-digits), and the 'opponent_address' (Registered Office) for a formal legal notice.
-    3. If ALL 9 FACTS are present, politely confirm that the intake is complete and you are ready to draft the formal PDF notice.
+    4. If ALL 9 FACTS are present, politely confirm that the intake is complete and you are ready to draft the formal PDF notice.
     """
     
     # We force Gemini to output strictly matching our Pydantic FactExtraction schema
