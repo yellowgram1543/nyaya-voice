@@ -59,7 +59,7 @@ def intake_node(state: CaseState) -> CaseState:
     
     # We force Gemini to output strictly matching our Pydantic FactExtraction schema
     response = client.models.generate_content(
-        model='gemini-2.5-flash',
+        model='gemini-2.0-flash',
         contents=prompt,
         config=genai.types.GenerateContentConfig(
             response_mime_type="application/json",

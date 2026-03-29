@@ -13,7 +13,7 @@ def draft_legal_text(facts: dict) -> str:
     
     # Quick category classification to refine RAG search
     category_prompt = f"Classify this consumer complaint into one of these 5 categories: goods, service, airline, housing, medical. Complaint: {facts.get('core_issue')}. Return ONLY the category name."
-    category_resp = client.models.generate_content(model='gemini-2.5-flash', contents=category_prompt)
+    category_resp = client.models.generate_content(model='gemini-2.0-flash', contents=category_prompt)
     category = category_resp.text.strip().lower()
 
     from rag import retrieve_cases
@@ -68,7 +68,7 @@ CRITICAL RULE: Return ONLY the raw text of the notice.
 No Markdown. No preambles. No asterisks. No hashtags.
 """
     response = client.models.generate_content(
-        model='gemini-2.5-flash',
+        model='gemini-2.0-flash',
         contents=prompt,
     )
     return response.text.strip()
