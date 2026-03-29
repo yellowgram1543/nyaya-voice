@@ -102,6 +102,10 @@ async def chat_endpoint(request: ChatRequest):
         # 2. Append the user's new message to the memory
         current_state["chat_history"].append({"role": "user", "text": request.message})
         
+        # 2.5 CRITICAL: Save state NOW, before calling Gemini.
+        # If Gemini crashes (503/429), the user's message is still preserved in the DB.
+        save_session(current_state)
+        
         # 3. RUN THE AGENTIC BRAIN (LangGraph Pipeline)
         # This analyzes the history, extracts facts to JSON, and generates a smart response
         new_state = intake_agent.invoke(current_state)
