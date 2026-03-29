@@ -79,7 +79,7 @@ from reportlab.lib.utils import ImageReader
 
 def generate_qr_image(session_id: str) -> ImageReader:
     """Generates a QR code image for the verification URL."""
-    # This URL should lead to your frontend's verification route
+    # This URL leads to your live frontend's verification route
     verify_url = f"https://nyaya-voice.vercel.app/verify/{session_id}"
     qr = qrcode.QRCode(version=1, box_size=10, border=1)
     qr.add_data(verify_url)
