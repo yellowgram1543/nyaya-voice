@@ -45,5 +45,13 @@ def save_session(state: dict):
     conn.commit()
     conn.close()
 
+def get_all_completed_sessions():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT session_id, facts FROM sessions WHERE is_complete = 1")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"session_id": r[0], "facts": json.loads(r[1])} for r in rows]
+
 # Initialize upon import
 init_db()

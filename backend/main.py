@@ -33,11 +33,53 @@ class ChatResponse(BaseModel):
     status: str
 
 # SQLite database for persistent state tracking across server restarts
-from database import get_session, save_session
+from database import get_session, save_session, get_all_completed_sessions
 
 @app.get("/")
 async def root():
     return {"message": "Nyaya-Voice API is running. The Nervous System is online."}
+
+@app.get("/api/b2b/notices")
+async def get_all_notices():
+    """Returns all completed legal notices for the B2B dashboard."""
+    return get_all_completed_sessions()
+
+@app.get("/api/verify/{session_id}")
+async def verify_notice(session_id: str):
+    """Verifies the authenticity of a legal notice via QR Code."""
+    session_data = get_session(session_id)
+    if not session_data or not session_data.get("is_complete"):
+        raise HTTPException(status_code=404, detail="Authentic Notice Not Found")
+    return {"status": "Verified", "session_id": session_id, "facts": session_data["facts"]}
+
+@app.get("/api/b2b/risk/{session_id}")
+async def get_risk_assessment(session_id: str):
+    """Generates an AI-driven Corporate Risk Score for a notice."""
+    session_data = get_session(session_id)
+    if not session_data:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    from google import genai
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    
+    prompt = f"""You are a Senior Corporate Defense Lawyer in India. 
+    Analyze this consumer complaint from a business perspective.
+    FACTS: {json.dumps(session_data['facts'])}
+    
+    Return a JSON object with:
+    1. risk_score: (0 to 100, where 100 is certain loss in court)
+    2. legal_vulnerability: (The weakest point in the company's defense)
+    3. recommendation: (Should they Refund, Repair, or Fight?)
+    4. estimated_cost: (Potential cost if this goes to District Commission)
+    """
+    
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt,
+        config=genai.types.GenerateContentConfig(response_mime_type="application/json")
+    )
+    import json
+    return json.loads(response.text)
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
@@ -118,7 +160,7 @@ async def download_notice(session_id: str):
     
     # Generate exactly what happens in Day 3
     draft_text = draft_legal_text(facts)
-    create_pdf(draft_text, pdf_path)
+    create_pdf(draft_text, pdf_path, session_id=session_id)
     
     return FileResponse(path=pdf_path, media_type='application/pdf', filename="Nyaya_Voice_Formal_Notice.pdf")
 

@@ -74,8 +74,27 @@ No Markdown. No preambles. No asterisks. No hashtags.
     )
     return response.text.strip()
 
-def create_pdf(text: str, filepath: str):
-    """Takes plain text and neatly formats it into a professional downloadable Indian court-style PDF."""
+import qrcode
+from io import BytesIO
+from reportlab.lib.utils import ImageReader
+
+def generate_qr_image(session_id: str) -> ImageReader:
+    """Generates a QR code image for the verification URL."""
+    # This URL should lead to your frontend's verification route
+    verify_url = f"https://nyaya-voice.vercel.app/verify/{session_id}"
+    qr = qrcode.QRCode(version=1, box_size=10, border=1)
+    qr.add_data(verify_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Convert PIL image to ReportLab compatible format
+    img_byte_arr = BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    return ImageReader(img_byte_arr)
+
+def create_pdf(text: str, filepath: str, session_id: str = "123"):
+    """Takes plain text and neatly formats it into a professional downloadable Indian court-style PDF with a QR verification code."""
     
     doc = SimpleDocTemplate(filepath, pagesize=letter,
                             rightMargin=72, leftMargin=72,
@@ -88,6 +107,19 @@ def create_pdf(text: str, filepath: str):
     
     flowables = []
     
+    # 1. Add the QR Code to the top-right corner
+    try:
+        qr_img = generate_qr_image(session_id)
+        # We'll use a spacer and then draw the QR code on the first page canvas if possible, 
+        # but the simplest way is to add it as a flowable at the top.
+        from reportlab.platypus import Image
+        qr_flowable = Image(qr_img, width=60, height=60)
+        qr_flowable.hAlign = 'RIGHT'
+        flowables.append(qr_flowable)
+        flowables.append(Spacer(1, -50)) # Pull the next text back up slightly
+    except Exception as e:
+        print(f"QR Generation Error: {e}")
+
     paragraphs = text.split('\n')
     for line in paragraphs:
         cleaned_line = line.strip()
