@@ -44,8 +44,7 @@ CRITICAL INSTRUCTIONS:
    - Para 2: Specific defect/incident on {facts.get('incident_date')}.
    - Para 3: History of failed resolution attempts via customer care 
      (cite Ticket ID placeholder).
-   - Para 4: Legal grounds — "Deficiency in Service" under Section 2(11) 
-     and "Unfair Trade Practice" under Section 2(47). \n{legal_precedents}
+   - Para 4: Legal grounds. You must explicitly quote the statutory definitions of "Deficiency in Service" and/or "Unfair Trade Practice" from the provided Statutory Law. Then, cite the supporting Legal Precedents to prove why my specific case matches these legal definitions. \n{legal_precedents}
    - Para 5: Final Demand within 15 days:
      (a) {facts.get('desired_resolution')} of Rs. {facts.get('dispute_amount')}
      (b) Compensation of Rs. [10-25% of {facts.get('dispute_amount')}] 

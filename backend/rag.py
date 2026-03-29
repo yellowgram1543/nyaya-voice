@@ -1,42 +1,57 @@
 import chromadb
 
-def retrieve_cases(query: str, category: str = None, top_k: int = 2) -> str:
-    """Takes the user's specific complaint and searches the vector database for the top 2 legal precedents.
-    Includes a category filter and a confidence (distance) check."""
+def retrieve_cases(query: str, category: str = None, top_k: int = 4) -> str:
+    """Takes the user's complaint and searches for relevant legal precedents AND statutory law (CPA 2019)."""
     try:
-        # Connect to the offline database
         client = chromadb.PersistentClient(path="./library_db")
         collection = client.get_collection(name="indian_consumer_cases")
         
-        # Build the query filter if a category is provided
-        where_filter = {"category": category} if category else None
+        # Build the filter: Get the specific category AND the 'general' statutory sections
+        if category and category != "general":
+            where_filter = {"$or": [
+                {"category": category},
+                {"category": "general"}
+            ]}
+        else:
+            where_filter = None
         
-        # Perform the Semantic Search
         results = collection.query(
             query_texts=[query],
             n_results=top_k,
             where=where_filter
         )
         
-        # Extract documents and distances (similarity scores)
         documents = results.get('documents', [[]])[0]
         distances = results.get('distances', [[]])[0]
+        metadatas = results.get('metadatas', [[]])[0]
         
         if not documents:
             return ""
             
-        formatted_cases = "SUPPORTING LEGAL PRECEDENTS (Incorporate these actual case laws into Para 4):\n"
+        statutory_output = "STATUTORY LAW (Quote these Sections in Para 4):\n"
+        precedent_output = "LEGAL PRECEDENTS (Cite these Cases in Para 4):\n"
+        
+        stats_added = 0
         cases_added = 0
         
-        for idx, (doc, dist) in enumerate(zip(documents, distances)):
-            # Distances in ChromaDB (using default L2) mean: lower is better. 
-            # 1.5 is a safe "relevance" threshold.
-            if dist < 1.5:
-                formatted_cases += f"Precedent {idx+1}: {doc}\n"
-                cases_added += 1
+        for doc, dist, meta in zip(documents, distances, metadatas):
+            if dist < 1.6: # Slightly wider threshold for statutory relevance
+                if meta.get('category') == 'general':
+                    statutory_output += f"- {doc}\n"
+                    stats_added += 1
+                else:
+                    precedent_output += f"- {doc}\n"
+                    cases_added += 1
         
-        return formatted_cases if cases_added > 0 else ""
+        final_output = ""
+        if stats_added > 0:
+            final_output += statutory_output + "\n"
+        if cases_added > 0:
+            final_output += precedent_output
+            
+        return final_output
         
     except Exception as e:
         print(f"RAG Error: {e}")
         return ""
+
