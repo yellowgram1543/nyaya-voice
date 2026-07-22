@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -173,6 +173,106 @@ async def download_notice(session_id: str):
     create_pdf(draft_text, pdf_path, session_id=session_id)
     
     return FileResponse(path=pdf_path, media_type='application/pdf', filename="Nyaya_Voice_Formal_Notice.pdf")
+
+# ============================================================
+# WHATSAPP CLOUD API INTEGRATION
+# ============================================================
+from whatsapp import send_whatsapp_message, send_whatsapp_document
+
+VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "nyaya-voice-verify-2026")
+
+@app.get("/webhook")
+async def verify_webhook(
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
+):
+    """Meta's one-time verification handshake. They send a GET with a challenge string."""
+    if hub_mode == "subscribe" and hub_token == VERIFY_TOKEN:
+        print(f"WhatsApp Webhook verified successfully!")
+        return int(hub_challenge)
+    raise HTTPException(status_code=403, detail="Verification failed")
+
+@app.post("/webhook")
+async def whatsapp_webhook(request: Request):
+    """Receives incoming WhatsApp messages and routes them through the LangGraph agent."""
+    body = await request.json()
+    
+    try:
+        # Extract the message from Meta's nested payload structure
+        entry = body.get("entry", [{}])[0]
+        changes = entry.get("changes", [{}])[0]
+        value = changes.get("value", {})
+        messages = value.get("messages", [])
+        
+        if not messages:
+            # This is a status update (delivered, read, etc.) — acknowledge and ignore
+            return {"status": "ok"}
+        
+        msg = messages[0]
+        sender_phone = msg.get("from", "")  # e.g. "919876543210"
+        msg_type = msg.get("type", "")
+        
+        # Extract text content
+        if msg_type == "text":
+            user_text = msg["text"]["body"]
+        elif msg_type == "image":
+            # Future: handle image receipts via Vision OCR
+            send_whatsapp_message(sender_phone, "📎 Image received! Image processing via WhatsApp is coming soon. For now, please describe your issue in text.")
+            return {"status": "ok"}
+        else:
+            send_whatsapp_message(sender_phone, "I can currently process text messages. Please describe your legal issue in text.")
+            return {"status": "ok"}
+        
+        # Use the phone number as the session_id — this is the magic link!
+        # Every message from the same phone continues the same legal intake.
+        session_id = f"wa_{sender_phone}"
+        
+        from agent import intake_agent
+        
+        # 1. Retrieve or create session state
+        current_state = get_session(session_id)
+        if not current_state:
+            current_state = {
+                "session_id": session_id,
+                "chat_history": [],
+                "facts": {},
+                "is_complete": False,
+                "latest_response": ""
+            }
+        
+        # 2. Append message and pre-save (amnesia protection)
+        current_state["chat_history"].append({"role": "user", "text": user_text})
+        save_session(current_state)
+        
+        # 3. Run the Agentic Brain
+        new_state = intake_agent.invoke(current_state)
+        
+        # 4. Save updated state
+        new_state["chat_history"].append({"role": "ai", "text": new_state.get("latest_response", "")})
+        save_session(new_state)
+        
+        # 5. Send AI response back to WhatsApp
+        ai_reply = new_state.get("latest_response", "I could not process that. Please try again.")
+        send_whatsapp_message(sender_phone, ai_reply)
+        
+        # 6. If intake is complete, auto-generate and send the PDF!
+        if new_state.get("is_complete"):
+            from drafter import draft_legal_text, create_pdf
+            facts = new_state["facts"]
+            pdf_path = f"nyaya_notice_{session_id}.pdf"
+            draft_text = draft_legal_text(facts)
+            create_pdf(draft_text, pdf_path, session_id=session_id)
+            
+            # Send the PDF download link
+            pdf_url = f"https://nyaya-voice-backend.onrender.com/api/download_notice/{session_id}"
+            send_whatsapp_message(sender_phone, f"✅ Your Legal Notice is ready!\n\n📄 Download here: {pdf_url}\n\nThis notice has been verified and stored in our database. You may send it via Registered AD/Speed Post to the opponent.")
+        
+        return {"status": "ok"}
+        
+    except Exception as e:
+        print(f"WhatsApp webhook error: {e}")
+        return {"status": "error", "detail": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
