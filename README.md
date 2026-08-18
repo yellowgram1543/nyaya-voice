@@ -1,92 +1,104 @@
 # Nyaya Voice
 
-A full-stack application combining Python backend and JavaScript frontend for voice-based interactions and AI-powered responses.
+Nyaya Voice is an AI-powered legal intake assistant that helps consumers describe disputes, collect key facts, and generate a legal notice PDF. It includes a FastAPI backend and a React + Vite frontend.
 
-🌐 **Live Demo:** [https://nyaya-voice.vercel.app](https://nyaya-voice.vercel.app)
+🌐 Live app: [https://nyaya-voice.vercel.app](https://nyaya-voice.vercel.app)
 
-## 📋 Overview
+## Overview
 
-Nyaya Voice is a modern application that leverages voice recognition and natural language processing to provide intelligent responses. The project features a robust Python backend and an interactive React + Vite frontend.
+Nyaya Voice is built for pre-litigation consumer complaint workflows:
+- conversational intake through a legal assistant
+- receipt/image fact extraction
+- notice verification and download endpoints
+- a B2B risk dashboard for completed notices
+- optional WhatsApp webhook flow for chat intake
 
-## 🛠️ Tech Stack
+## Project Structure
 
-### Backend
-- **Python** (63.7%) - Core backend logic and AI processing
-
-### Frontend
-- **JavaScript** (31.3%) - Interactive frontend logic
-- **React + Vite** - Modern, fast development experience with HMR
-- **CSS** (4.5%) - Styling
-- **HTML** (0.5%) - Markup
-
-### Deployment
-- Frontend hosted on **Vercel**
-
-## 📂 Project Structure
-
-```
+```text
 nyaya-voice/
-├── backend/          # Python backend application
-├── frontend/         # React + Vite frontend application
-└── README.md         # This file
+├── backend/              # FastAPI app, AI agent flow, drafting + storage logic
+│   ├── main.py
+│   ├── requirements.txt
+│   └── render.yaml
+├── frontend/             # React + Vite client
+│   ├── src/App.jsx
+│   └── package.json
+└── README.md
 ```
 
-## 🚀 Getting Started
+## Features
+
+- AI-guided legal intake conversation (`/api/chat`)
+- Receipt upload + fact extraction (`/api/upload_receipt`)
+- Legal notice PDF generation (`/api/download_notice/{session_id}`)
+- Notice authenticity verification (`/api/verify/{session_id}`)
+- Corporate risk dashboard endpoints (`/api/b2b/*`)
+- WhatsApp webhook integration (`/webhook`)
+
+## Setup
 
 ### Prerequisites
-- Python 3.8+ (for backend)
-- Node.js 16+ (for frontend)
-- npm or yarn
 
-### Backend Setup
+- Python 3.10+
+- Node.js 20+
+- npm
+
+### 1) Backend
 
 ```bash
 cd backend
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# Run the server
-python app.py
 ```
 
-### Frontend Setup
+Create `backend/.env`:
+
+```env
+GEMINI_API_KEY=your_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+# Optional for WhatsApp integration:
+WHATSAPP_TOKEN=
+WHATSAPP_PHONE_ID=
+WHATSAPP_VERIFY_TOKEN=
+```
+
+Run backend locally:
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 2) Frontend
 
 ```bash
 cd frontend
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-## 🎯 Features
+By default, frontend API calls target the deployed backend (`https://nyaya-voice-backend.onrender.com`).
 
-- Voice input recognition
-- AI-powered response generation
-- Real-time processing
-- Clean, intuitive user interface
-- Cross-platform compatibility
+## Development
 
-## 📝 License
+- Frontend app runs at `http://localhost:5173`
+- Backend API runs at `http://localhost:8000`
+- Frontend scripts:
+  - `npm run dev` — start Vite dev server
+  - `npm run build` — production build
+  - `npm run preview` — preview built app
+  - `npm run lint` — lint frontend code
 
-This project is open source and available under the MIT License.
+## Deployment
 
-## 👤 Author
+- Frontend: Vercel (`nyaya-voice.vercel.app`)
+- Backend: Render (`backend/render.yaml`, `uvicorn main:app`)
 
-**yellowgram1543** - [GitHub Profile](https://github.com/yellowgram1543)
+## Contributing
 
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/yellowgram1543/nyaya-voice/issues) to see what needs improvement.
-
----
-
-**Last Updated:** 2026
+Contributions are welcome. Please:
+1. open an issue describing the change
+2. keep changes focused and well-scoped
+3. run relevant checks before submitting a PR
