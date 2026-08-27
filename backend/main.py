@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Query
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Query, Form
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -35,6 +35,10 @@ class ChatResponse(BaseModel):
 
 # SQLite database for persistent state tracking across server restarts
 from database import get_session, save_session, update_session_facts, get_all_completed_sessions
+from speech import SarvamSpeechToText
+
+# Instantiate the STT client
+stt_client = SarvamSpeechToText()
 
 @app.get("/")
 async def root():
@@ -118,6 +122,81 @@ async def chat_endpoint(request: ChatRequest):
             reply=new_state.get("latest_response", "I could not process that."),
             status="complete" if new_state.get("is_complete") else "active"
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/transcribe")
+async def transcribe_endpoint(
+    file: UploadFile = File(...),
+    mode: str = Form("translate"),
+    language_code: str = Form("unknown")
+):
+    try:
+        audio_bytes = await file.read()
+        result = stt_client.transcribe(
+            audio_bytes=audio_bytes,
+            filename=file.filename,
+            mode=mode,
+            language_code=language_code
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/voice-chat")
+async def voice_chat_endpoint(
+    file: UploadFile = File(...),
+    session_id: str = Form(...),
+    mode: str = Form("translate")
+):
+    try:
+        # Run STT
+        audio_bytes = await file.read()
+        stt_result = stt_client.transcribe(
+            audio_bytes=audio_bytes,
+            filename=file.filename,
+            mode=mode,
+            language_code="unknown"
+        )
+        
+        if not stt_result.get("success"):
+            raise HTTPException(status_code=400, detail=stt_result.get("error", "Speech-to-Text failed"))
+            
+        transcript = stt_result.get("transcript", "")
+        
+        from agent import intake_agent
+        
+        # Retrieve or Initialize State for this specific user session
+        current_state = get_session(session_id)
+        if not current_state:
+            current_state = {
+                "session_id": session_id,
+                "chat_history": [],
+                "facts": {},
+                "is_complete": False,
+                "latest_response": ""
+            }
+        
+        # Append transcript
+        current_state["chat_history"].append({"role": "user", "text": transcript})
+        save_session(current_state)
+        
+        # Invoke agent
+        new_state = intake_agent.invoke(current_state)
+        
+        # Save response
+        new_state["chat_history"].append({"role": "ai", "text": new_state.get("latest_response", "")})
+        save_session(new_state)
+        
+        return {
+            "transcript": transcript,
+            "reply": new_state.get("latest_response", "I could not process that."),
+            "status": "complete" if new_state.get("is_complete") else "active",
+            "facts": new_state.get("facts", {}),
+            "is_complete": new_state.get("is_complete", False)
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
